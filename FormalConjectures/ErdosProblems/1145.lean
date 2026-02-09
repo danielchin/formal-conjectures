@@ -29,7 +29,20 @@ open Set Filter Pointwise Topology AdditiveCombinatorics
 
 namespace Erdos1145
 
+/--
+Let $A=\{1\leq a_1 < a_2 < \cdots\}$ and $B=\{1\leq b_1 < b_2 < \cdots\}$ be sets of integers with
+$a_n/b_n\to 1$.
 
+If $A+B$ contains all sufficiently large positive integers then is it true that
+$\limsup 1_A\ast 1_B(n)=\infty$?
+
+Formalization note: There's some discussion in the comments of [erdosproblems.com/28] and
+[erdosproblems.com/1145] about whether or not $0$ should be included in $A$ or $B$ and has been
+left purposely ambiguous. Problem 1145 was originally written as $A + B = \mathbb{N}$, which
+would imply that $0$ would need to exist in $A$ or $B$ to include $1$ in $A + B$. However, it's been
+made more general and rewritten as "sufficiently large positive integers". The formalization below
+is the version that includes $0$.
+-/
 def Erdos1145Prop : Prop :=
   ∀ ⦃A B : Set ℕ⦄ (_ : A.Infinite) (_ : B.Infinite),
     Tendsto (fun n ↦ (Nat.nth (· ∈ A) n : ℝ) / (Nat.nth (· ∈ B) n : ℝ)) atTop (𝓝 1) →
