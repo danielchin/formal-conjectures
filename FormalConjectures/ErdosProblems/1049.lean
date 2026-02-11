@@ -43,7 +43,7 @@ theorem erdos_1049 :
 Erdős [Er48] proved that this is true if $t\geq 2$ is an integer.
 -/
 @[category research solved, AMS 11]
-theorem erdos_1049_integer :
+theorem erdos_1049.variants.geq_2_integer :
      ∀ t : ℤ, t ≥ 2 → Irrational (∑' n : ℕ+, 1 / ((t : ℝ) ^ (n : ℕ) - 1)) := by
   sorry
 
