@@ -64,7 +64,7 @@ def greedyMaximalSidonSet (N : ℕ) : Finset ℕ :=
 It is easy to prove that the greedy construction of a maximal Sidon set in $\{1,\ldots,N\}$ has size
 $\gg N^{1/3}$.
 -/
-@[category high_school, AMS 5]
+@[category research solved, AMS 5]
 theorem erdos_156.variants.greedy_lower_bound :
     (fun N ↦ ((greedyMaximalSidonSet N).card : ℝ)) ≫ (fun N ↦ (N : ℝ) ^ (1 / 3 : ℝ)) := by
   sorry
