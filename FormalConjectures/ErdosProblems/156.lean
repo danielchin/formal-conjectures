@@ -26,38 +26,56 @@ import FormalConjectures.Util.ProblemImports
 - [Ru98b] Ruzsa, Imre Z., A small maximal Sidon set. Ramanujan J. (1998), 55-58.
 -/
 
-open Finset Nat Filter
-open scoped Asymptotics Classical
+open Finset Filter
+open scoped Classical
 
 namespace Erdos156
-
-/-- Local version of IsMaximalSidonSetIn for Finset ℕ -/
-def IsMaximalSidonSetIn (A : Finset ℕ) (N : ℕ) : Prop :=
-  Set.IsMaximalSidonSetIn (A : Set ℕ) N
-
 /--
 The size of the smallest maximal Sidon set in $\{1, \dots, N\}$.
 -/
-noncomputable def min_maximal_sidon_size (N : ℕ) : ℕ :=
-  sInf (((Icc 1 N).powerset.filter (fun A => IsMaximalSidonSetIn A N)).image card : Set ℕ)
+noncomputable def minMaximalSidonSet (N : ℕ) : ℕ :=
+  sInf (((Icc 1 N).powerset.filter fun (A : Finset ℕ) ↦
+    Set.IsMaximalSidonSetIn (A : Set ℕ) N).image card : Set ℕ)
 
 /--
 Does there exist a maximal Sidon set $A\subset \{1,\ldots,N\}$ of size $O(N^{1/3})$?
 
 A question of Erdős, Sárközy, and Sós [ESS94].
 -/
-@[category research open, AMS 11]
+@[category research open, AMS 5]
 theorem erdos_156 :
     answer(sorry) ↔
-      (fun N ↦ (min_maximal_sidon_size N : ℝ)) =O[atTop] (fun N ↦ (N : ℝ) ^ (1/3 : ℝ)) := by
+      (fun N ↦ (minMaximalSidonSet N : ℝ)) =O[atTop] (fun N ↦ (N : ℝ) ^ (1 / 3 : ℝ)) := by
+  sorry
+
+/--
+A greedy construction of a maximal Sidon set.
+-/
+def greedyMaximalSidonSet (N : ℕ) : Finset ℕ :=
+  ((List.range N).map (· + 1)).foldl
+    (fun A x ↦
+      if ∀ a ∈ A, ∀ b ∈ A, ∀ c ∈ A, x + a ≠ b + c then
+        insert x A
+      else
+        A)
+    ∅
+
+/--
+It is easy to prove that the greedy construction of a maximal Sidon set in $\{1,\ldots,N\}$ has size
+$\gg N^{1/3}$.
+-/
+@[category high_school, AMS 5]
+theorem erdos_156.variants.greedy_lower_bound :
+    (fun N ↦ ((greedyMaximalSidonSet N).card : ℝ)) ≫ (fun N ↦ (N : ℝ) ^ (1 / 3 : ℝ)) := by
   sorry
 
 /--
 Ruzsa [Ru98b] constructed a maximal Sidon set of size $\ll (N\log N)^{1/3}$.
 -/
-@[category research solved, AMS 11]
-theorem erdos_156_ruzsa_bound :
-    (fun N ↦ (min_maximal_sidon_size N : ℝ)) =O[atTop] (fun N ↦ ((N : ℝ) * Real.log N) ^ (1/3 : ℝ)) := by
+@[category research solved, AMS 5]
+theorem erdos_156.variants.ruzsa_upper_bound :
+    (fun N ↦ (minMaximalSidonSet N : ℝ)) ≪
+      (fun N ↦ ((N : ℝ) * Real.log N) ^ (1 / 3 : ℝ)) := by
   sorry
 
 end Erdos156
