@@ -39,7 +39,7 @@ had forgotten this).
 -/
 @[category research open, AMS 5 11]
 theorem erdos_865 :
-    answer(sorry) ↔ ∃ C > 0, ∀ᶠ (N : ℕ) in atTop,
+    ∃ C > 0, ∀ᶠ (N : ℕ) in atTop,
       ∀ A ⊆ Icc 1 N, A.card ≥ (5 / 8 : ℝ) * N + C →
       ∃ a ∈ A, ∃ b ∈ A, ∃ c ∈ A, a ≠ b ∧ a ≠ c ∧ b ≠ c ∧
       a + b ∈ A ∧ a + c ∈ A ∧ b + c ∈ A := by
@@ -68,8 +68,8 @@ have all pairwise sums in the set.
 @[category research open, AMS 5 11]
 theorem erdos_865.variants.sos :
     ∀ᵉ (k : ℕ) (hk : 2 ≤ k),
-      ∃ c, c = (1 / 2 : ℝ) * (1 + ∑ r ∈ Icc 1 (k - 2), (1 / 4 : ℝ) ^ r) ∧
-      (fun N ↦ (f N k : ℝ)) ~[atTop] (fun N ↦ c * N) := by
+    (fun N ↦ (f N k : ℝ)) ~[atTop] (fun N ↦ (1 / 2 : ℝ) * (1 + ∑ r ∈ Icc 1 (k - 2),
+      (1 / 4 : ℝ) ^ r) * N) := by
   sorry
 
 /--
