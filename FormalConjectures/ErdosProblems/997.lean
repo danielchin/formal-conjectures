@@ -52,8 +52,6 @@ def IsWellDistributed (x : ℕ → ℝ) : Prop :=
 /--
 Is it true that, for every $\alpha$, the sequence $\{ \alpha p_n\}$ is not well-distributed,
 if $p_n$ is the sequence of primes?
-
-
 -/
 @[category research open, AMS 11]
 theorem erdos_997 :
