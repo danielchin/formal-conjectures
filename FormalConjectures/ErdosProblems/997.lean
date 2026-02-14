@@ -43,21 +43,22 @@ $\lvert \# \{ n < m\leq n+k : x_m\in I\} - \lvert I\rvert k\rvert < \epsilon k.$
 The notion of a well-distributed sequence was introduced by Hlawka and Petersen [Hl55].
 -/
 def IsWellDistributed (x : ℕ → ℝ) : Prop :=
-  ∀ ε > 0, ∃ K : ℕ, ∀ k ≥ K, ∀ n : ℕ,
+  ∀ ε > 0, ∀ᶠ k in Filter.atTop, ∀ n : ℕ,
   ∀ a b, 0 ≤ a → a ≤ b → b ≤ 1 →
-    let count := (Finset.Ioc n (n + k)).filter (fun m ↦ x m ∈ Ico a b)
+    letI I := Ico a b
+    let count := (Finset.Ioc n (n + k)).filter (fun m ↦ x m ∈ I)
     abs ((count.card : ℝ) - (b - a) * k) < ε * k
 
 /--
 Is it true that, for every $\alpha$, the sequence $\{ \alpha p_n\}$ is not well-distributed,
 if $p_n$ is the sequence of primes?
 
-The existence of such an $\alpha$ was established by Champagne, Le, Liu, and Wooley [CLLW24].
+
 -/
 @[category research open, AMS 11]
 theorem erdos_997 :
     answer(sorry) ↔
-      ∀ α : ℝ, ¬ IsWellDistributed (fun n ↦ Int.fract (α * (Nat.nth Nat.Prime n))) := by
+      ∀ α : ℝ, ¬ IsWellDistributed (fun n ↦ Int.fract (α * (n.nth Nat.Prime))) := by
   sorry
 
 /--
@@ -65,8 +66,7 @@ Erdős proved that, if $n_k$ is a lacunary sequence, then the sequence $\{ \alph
 well-distributed for almost all $\alpha$.
 -/
 @[category research solved, AMS 11]
-theorem erdos_997.variants.lacunary (n : ℕ → ℕ)
-    (h : ∃ q > 1, ∀ k, (n (k + 1) : ℝ) ≥ q * (n k : ℝ)) :
+theorem erdos_997.variants.lacunary (n : ℕ → ℕ) (h : IsLacunary n) :
     ∀ᵐ α, ¬ IsWellDistributed (fun k ↦ Int.fract (α * (n k : ℝ))) := by
   sorry
 
@@ -76,13 +76,12 @@ $\{\alpha p_n\}$ is not well-distributed. He later retracted this claim in [Er85
 theorem is no doubt correct and perhaps will not be difficult to prove but I never was able to
 reconstruct my 'proof' which perhaps never existed."
 
-Champagne, Le, Liu, and Wooley [CLLW24] proved that there exists an irrational $\alpha$ for which
-$\{\alpha p_n\}$ is not well-distributed.
+The existence of such an $\alpha$ was established by Champagne, Le, Liu, and Wooley [CLLW24].
 -/
 @[category research solved, AMS 11]
 theorem erdos_997.variants.irrational :
     ∃ α : ℝ, Irrational α ∧
-      ¬ IsWellDistributed (fun n ↦ Int.fract (α * (Nat.nth Nat.Prime n))) := by
+      ¬ IsWellDistributed (fun n ↦ Int.fract (α * (n.nth Nat.Prime))) := by
   sorry
 
 end Erdos997
