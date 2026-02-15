@@ -39,13 +39,13 @@ and $\lim_{n\to \infty}\lvert \{ \alpha\in (0,1): f(\alpha,n)\leq c\}\rvert=g(c)
 @[category research open, AMS 11]
 theorem erdos_1002 :
     answer(sorry) ↔
-      ∃ f : ℝ → ℝ, Monotone f ∧
-      Tendsto f atBot (𝓝 0) ∧
-      Tendsto f atTop (𝓝 1) ∧
-      ∀ c : ℝ, Tendsto (fun (n : ℕ) ↦
-        (volume { α | α ∈ Ioo (0 : ℝ) 1 ∧
-          (1 / log n) * ∑ k ∈ Icc (1 : ℕ) n, (1 / 2 - Int.fract (α * k)) ≤ c }).toReal)
-        atTop (𝓝 (f c)) := by
+      ∃ g : ℝ → ℝ, Monotone g ∧
+      Tendsto g atBot (𝓝 0) ∧
+      Tendsto g atTop (𝓝 1) ∧
+      letI f :=  fun (α : ℝ) (n : ℕ) ↦
+        (1 / log n) * ∑ k ∈ Icc (1 : ℕ) n, (1 / 2 - Int.fract (α * k))
+      ∀ c : ℝ, Tendsto (fun (n : ℕ) ↦ (volume { α | α ∈ Ioo (0 : ℝ) 1 ∧ f α n ≤ c }).toReal)
+        atTop (𝓝 (g c)) := by
   sorry
 
 /--
@@ -56,10 +56,10 @@ constant.
 -/
 @[category research solved, AMS 11]
 theorem erdos_1002.variants.kesten :
-    ∃ ρ > 0, ∀ β : ℝ,
+    ∃ ρ > 0,
       let g := fun (c : ℝ) ↦ (1 / π) * ∫ t in Iic (ρ * c), 1 / (1 + t^2)
       ∀ c : ℝ, Tendsto (fun (n : ℕ) ↦
-        (volume { α | α ∈ Ioo (0 : ℝ) 1 ∧
+        (volume { p : ℝ × ℝ | let ⟨α, β⟩ := p; α ∈ Icc (0 : ℝ) 1 ∧ β ∈ Icc (0 : ℝ) 1 ∧
           (1 / log n) * ∑ k ∈ Icc (1 : ℕ) n, (1 / 2 - Int.fract (β + α * k)) ≤ c }).toReal)
         atTop (𝓝 (g c)) := by
   sorry
