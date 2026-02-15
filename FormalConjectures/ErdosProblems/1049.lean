@@ -52,7 +52,7 @@ abbrev τ  := fun (n : ℕ) => n.divisors.card
 /--
 The Lambert series identity where $x = 1/t$ for the divisor function.
 -/
-@[category undergraduate, AMS 11]
+@[category test, AMS 11]
 theorem lambert_series_eq_num_divisor_sum : ∀ t : ℚ,
      (∑' n : ℕ+, 1 / ((t : ℝ) ^ (n : ℕ) - 1)) = (∑' n : ℕ+, τ n / ((t : ℝ) ^ (n : ℕ))) := by
   sorry
