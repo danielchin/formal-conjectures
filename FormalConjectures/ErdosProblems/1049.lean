@@ -47,4 +47,14 @@ theorem erdos_1049.variants.geq_2_integer :
      ∀ t : ℤ, t ≥ 2 → Irrational (∑' n : ℕ+, 1 / ((t : ℝ) ^ (n : ℕ) - 1)) := by
   sorry
 
+abbrev τ  := fun (n : ℕ) => n.divisors.card
+
+/--
+The Lambert series identity where $x = 1/t$ for the divisor function.
+-/
+@[category undergraduate, AMS 11]
+theorem lambert_series_eq_num_divisor_sum : ∀ t : ℚ,
+     (∑' n : ℕ+, 1 / ((t : ℝ) ^ (n : ℕ) - 1)) = (∑' n : ℕ+, τ n / ((t : ℝ) ^ (n : ℕ))) := by
+  sorry
+
 end Erdos1049
