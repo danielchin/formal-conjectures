@@ -40,7 +40,7 @@ $a,b,c\in A$ are all distinct (aside from the trivial coincidences).
 Formalization note: this is generalized to allow for different $r$.
 -/
 noncomputable def f (N r : ℕ) : ℕ :=
-  let candidates := (Icc 1 N).powerset.filter (fun A ↦
+  letI candidates := (Icc 1 N).powerset.filter (fun A ↦
     ∀ m₁ m₂ : Multiset ℕ,
       m₁.card = r → m₂.card = r →
       (∀ x ∈ m₁, x ∈ A) → (∀ x ∈ m₂, x ∈ A) →
@@ -80,13 +80,19 @@ theorem erdos_241.variants.upper_bound :
   sorry
 
 /--
-More generally, Bose and Chowla conjectured that the maximum size of $A\subseteq \{1,\ldots,N\}$
-with all $r$-fold sums distinct (aside from the trivial coincidences) then
-$\lvert A\rvert \sim N^{1/r}.$
+The conjecture that the size of the set $A\subseteq \{1,\ldots,N\}$ is asymptotically $N^{1/r}$.
+-/
+def BoseChowlaConjecture (r : ℕ) : Prop :=
+  (fun N ↦ (f N r : ℝ)) ~[atTop] (fun N ↦ (N : ℝ) ^ ((1 : ℝ) / r))
+
+/--
+More generally, Bose and Chowla [BoCh62] conjectured that the maximum size of
+$A\subseteq \{1,\ldots,N\}$ with all $r$-fold sums distinct (aside from the trivial coincidences)
+then $\lvert A\rvert \sim N^{1/r}.$
 -/
 @[category research open, AMS 5]
 theorem erdos_241.variants.generalization :
-    ∀ (r : ℕ), r ≥ 2 → (fun N ↦ (f N r : ℝ)) ~[atTop] (fun N ↦ (N : ℝ) ^ ((1 : ℝ) / r)) := by
+    ∀ r, r ≥ 2 → BoseChowlaConjecture r := by
   sorry
 
 /--
@@ -94,7 +100,7 @@ This is known only for $r=2$ (see [erdosproblems.com/30]).
 -/
 @[category research solved, AMS 5]
 theorem erdos_241.variants.r_eq_2 :
-    (fun N ↦ (f N 2 : ℝ)) ~[atTop] (fun N ↦ (N : ℝ) ^ (1 : ℝ) / 2) := by
+    BoseChowlaConjecture 2 := by
   sorry
 
 end Erdos241
