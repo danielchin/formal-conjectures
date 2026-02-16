@@ -87,8 +87,8 @@ Let $A\subset\mathbb{N}$ be infinite such that $\sum_{a \in A} \frac{1}{a} = \in
 there exist some $k\geq 1$ such that almost all integers have a divisor of the form $a+k$
 for some $a\in A$?
 -/
-@[category research open, AMS 11]
-theorem erdos_26 : answer(sorry) ↔ ∀ A : ℕ → ℕ, StrictMono A → IsThick A →
+@[category research solved, AMS 11]
+theorem erdos_26 : answer(False) ↔ ∀ A : ℕ → ℕ, StrictMono A → IsThick A →
     ∃ k, IsBehrend (A · + k) := by
   sorry
 
