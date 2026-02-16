@@ -21,8 +21,8 @@ import FormalConjectures.Util.ProblemImports
 
 *References:*
 - [erdosproblems.com/1051](https://www.erdosproblems.com/1051)
-- [BKKKZ26] K. Barreto, J. Kang, S.-H. Kim, V. Kova\v{c}, and S. Zhang, Irrationality of rapidly
-  converging series: a problem of Erd\H{o}s and Graham. arXiv:2601.21442 (2026).
+- [BKKKZ26] K. Barreto, J. Kang, S.-H. Kim, V. Kovač, and S. Zhang, Irrationality of rapidly
+  converging series: a problem of Erdős and Graham. arXiv:2601.21442 (2026).
 - [Er88c] Erdős, P., On the irrationality of certain series: problems and results. New advances in
   transcendence theory (Durham, 1986) (1988), 102-109.
 - [ErGr80] Erdős, P. and Graham, R., Old and new problems and results in combinatorial number
