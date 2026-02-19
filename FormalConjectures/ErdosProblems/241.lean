@@ -91,8 +91,7 @@ $A\subseteq \{1,\ldots,N\}$ with all $r$-fold sums distinct (aside from the triv
 then $\lvert A\rvert \sim N^{1/r}.$
 -/
 @[category research open, AMS 5]
-theorem erdos_241.variants.generalization :
-    ∀ r, r ≥ 2 → BoseChowlaConjecture r := by
+theorem erdos_241.variants.generalization (r : ℕ) (hr : r ≥ 2) :  BoseChowlaConjecture r := by
   sorry
 
 /--
