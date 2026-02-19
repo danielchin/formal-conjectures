@@ -59,8 +59,11 @@ is irrational. Conversely, for any $1 < C < \infty$ there exists a sequence of i
 $1\leq a_1<\cdots$ such that $\lim a_n^{1/\phi^{n}}=C$ where this infinite sum is a rational number.
 
 (Further, more general, results are available in [BKKKZ26].)
+
+This was formalized in Lean by Baretto.
 -/
-@[category research solved, AMS 11]
+@[category research formally solved using lean4 at
+"https://www.erdosproblems.com/forum/thread/1051", AMS 11]
 theorem erdos_1051 :
     answer(True) ↔ ∀ (a : ℕ → ℤ), StrictMono a → GrowthCondition a →
       Irrational (ErdosSeries a) := by

@@ -50,8 +50,11 @@ $f(n,\lfloor n^{2/3}\rfloor)\ll n$. De Caen and Székely prove
 $n^{10/9}\gg f(n,\lfloor n^{2/3}\rfloor) \gg n^{58/57+o(1)}$ for $m\sim n^{2/3}$. They also prove
 more generally that, for $n^{1/2}\leq m\leq n$, $f(n,m) \ll (nm)^{2/3},$ which was also proved by
 Faudree and Simonovits.
+
+This was formalized in Lean by Alexeev using Aristotle.
 -/
-@[category research solved, AMS 5]
+@[category research formally solved using lean4 at
+"https://github.com/plby/lean-proofs/blob/main/src/v4.24.0/ErdosProblems/Erdos1080.lean", AMS 5]
 theorem erdos_1080 :
     answer(False) ↔
     ∃ c > (0 : ℝ), ∀ (V : Type) [Fintype V] [Nonempty V] (G : SimpleGraph V) (X Y : Set V),
