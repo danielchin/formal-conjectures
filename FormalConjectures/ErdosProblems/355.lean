@@ -42,7 +42,7 @@ as proved by van Doorn and Kova\v{c} [DoKo25].
 @[category research solved, AMS 11]
 theorem erdos_355 :
     answer(True) ↔ ∃ A : ℕ → ℕ, IsLacunary A ∧ ∃ u v : ℝ, u < v ∧ ∀ q : ℚ, ↑q ∈ Set.Ioo u v →
-      q ∈ {∑ a ∈ A', (1 / a : ℚ) | (A' : Finset ℕ) (_ : A'.toSet ⊆ Set.range A)} := by
+      q ∈ {∑ a ∈ A', (1 / a : ℚ) | (A' : Finset ℕ) (_ : ↑A' ⊆ Set.range A)} := by
   sorry
 
 
