@@ -41,7 +41,7 @@ Further families of solutions are given in the comments by SharkyKesa.
 
 This was earlier asked about in a [MathOverflow] question, in response to which Elkies also gave an
 alternative construction which produces solutions - at the moment it is not clear whether Elkies'
-argument gives infinitely many solutions (although I believe it can).
+argument gives infinitely many solutions (although Bloom believes that it can).
 -/
 @[category research solved, AMS 11]
 theorem erdos_397 :
