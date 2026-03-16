@@ -25,6 +25,8 @@ import FormalConjectures.Util.ProblemImports
   arXiv:2211.07689 (2022).
 - [CFS14] Conlon, David and Fox, Jacob and Sudakov, Benny, Cycle packing. Random Structures
   Algorithms (2014), 608-626.
+- [EGP66] Erdős, Paul and Goodman, A. W. and Pósa, Lajos, The representation of a graph by set
+  intersections. Canadian J. Math. (1966), 106-112.
 - [Er71] Erdős, P., Some unsolved problems in graph theory and combinatorial analysis. Combinatorial
   Mathematics and its Applications (Proc. Conf., Oxford, 1969) (1971), 97-109.
 -/
@@ -59,7 +61,7 @@ theorem erdos_184 :
   sorry
 
 /--
-Erdős and Gallai proved that $O(n \log n)$ many cycles and edges suffices.
+Erdős and Gallai [EGP66] proved that $O(n \log n)$ many cycles and edges suffices.
 -/
 @[category research solved, AMS 5]
 theorem erdos_184.variants.n_log_n :
