@@ -70,4 +70,11 @@ theorem erdos_445.variants.heath_brown :
       ∀ᶠ p : ℕ in atTop, p.Prime → ∀ n : ℕ, Erdos445Prop c p n := by
   sorry
 
+/-- Small example: for $p=5$, $c=1$, $n=0$, the pair $(2,3) \in (0,5)$ satisfies
+$2 \cdot 3 = 6 \equiv 1 \pmod{5}$. -/
+@[category test, AMS 11]
+theorem erdos_445.test.small_example : Erdos445Prop 1 5 1 := by
+  refine ⟨2, 3, by omega, ?_, by omega, ?_, by native_decide⟩
+  all_goals simp only [Real.rpow_one]; norm_num
+
 end Erdos445
