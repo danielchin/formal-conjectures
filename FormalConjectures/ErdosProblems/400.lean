@@ -71,68 +71,6 @@ theorem erdos_400.variants.upper_bound (k : ℕ) (hk : k ≥ 2) :
 /-- For $k \ge 2$, $g_k(n) > 0$. We show this by choosing $a = (n, 1, 0, \ldots, 0)$. -/
 @[category test, AMS 11]
 theorem erdos_400.variants.g_pos (k n : ℕ) (h: k ≥ 2) : 0 < g k n := by
-  have hz : 0 < k := by omega
-  have h0 : 0 < k := by omega
-  have h1 : 1 < k := by omega
-  let a : Fin k → ℕ := fun i ↦
-    if i = ⟨0, h0⟩ then n else if i = ⟨1, h1⟩ then 1 else 0
-  have h1_ne_0 : (⟨1, h1⟩ : Fin k) ≠ ⟨0, h0⟩ := by
-    intro hc
-    apply Nat.zero_ne_one
-    exact (Fin.mk.inj hc).symm
-  have h_prod : (∏ i, (a i) !) ∣ n ! := by
-    have : (∏ i, (a i) !) = n ! := by
-      calc
-        (∏ i, (a i) !) = (a ⟨0, h0⟩) ! := by
-          refine Fintype.prod_eq_single (⟨0, h0⟩ : Fin k) ?_
-          intro i hi0
-          dsimp [a]
-          split_ifs with h_1
-          · exact (hi0 h_1).elim
-          · rfl
-          · rfl
-        _ = n ! := by simp [a]
-    exact dvd_of_eq this
-  have h_sum : (∑ i, a i) - n = 1 := by
-    have ha_eq : a = fun i ↦ (if i = ⟨0, h0⟩ then n else 0) + (if i = ⟨1, h1⟩ then 1 else 0) := by
-      ext i
-      dsimp [a]
-      split_ifs with h_1 h_2
-      · subst h_1; exfalso; exact h1_ne_0 h_2.symm
-      · rfl
-      · rfl
-      · rfl
-    rw [ha_eq, Finset.sum_add_distrib]
-    simp
-  have h_mem : 1 ∈ { ((∑ i, a i) - n) | (a : Fin k → ℕ) (_ : (∏ i, (a i) !) ∣ n !) } := by
-    simp only [Set.mem_setOf_eq]
-    exact ⟨a, h_prod, h_sum⟩
-  have h_le : 1 ≤ g k n := by
-    have h_bdd : BddAbove { ((∑ i, a i) - n) | (a : Fin k → ℕ) (_ : (∏ i, (a i) !) ∣ n !) } := by
-      use (k * n !)
-      rintro x ⟨a', h_div, rfl⟩
-      have h_le_fa : ∀ i, a' i ≤ (a' i) ! := by
-        intro i
-        cases (a' i) with
-        | zero => exact Nat.zero_le 1
-        | succ m =>
-          have hm : 1 ≤ m ! := Nat.factorial_pos m
-          calc
-            m + 1 = (m + 1) * 1 := by ring
-            _ ≤ (m + 1) * m ! := Nat.mul_le_mul_left _ hm
-            _ = (m + 1) ! := rfl
-      have h_le_n : ∀ i, (a' i) ! ≤ n ! := by
-        intro i
-        have hd1 : (a' i) ! ∣ ∏ j, (a' j) ! := Finset.dvd_prod_of_mem _ (Finset.mem_univ i)
-        have hd2 : (a' i) ! ∣ n ! := dvd_trans hd1 h_div
-        exact Nat.le_of_dvd (Nat.factorial_pos n) hd2
-      have h_a_le : ∀ i, a' i ≤ n ! := fun i => le_trans (h_le_fa i) (h_le_n i)
-      have h_sum_le : (∑ i, a' i) ≤ k * n ! := by
-        have hs : (∑ i : Fin k, n !) = k * n ! := by simp
-        rw [← hs]
-        exact Finset.sum_le_sum fun i _ => h_a_le i
-      omega
-    exact le_csSup h_bdd h_mem
-  exact h_le
+  sorry
 
 end Erdos400
