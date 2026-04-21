@@ -27,8 +27,7 @@ import FormalConjectures.Util.ProblemImports
   (1980), 89-115.
 -/
 
-open Nat Finset
-open scoped BigOperators
+open Finset
 
 namespace Erdos1210
 
