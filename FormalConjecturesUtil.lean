@@ -16,7 +16,7 @@ limitations under the License.
 module
 
 public import Mathlib
-public import FormalConjecturesForMathlib
+public import FormalConjecturesUtil.SharedImports
 public import FormalConjecturesUtil.Answer
 public import FormalConjecturesUtil.Linters.AMSLinter
 public import FormalConjecturesUtil.Linters.AnswerLinter

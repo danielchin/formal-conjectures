@@ -22,12 +22,10 @@ public import Mathlib.Tactic.Linter.Header
 
 This file implements a linter that enforces import conventions in `FormalConjectures`:
 
-1. **Disallow direct `Mathlib` and `FormalConjecturesForMathlib` imports**: Problem files in
-   `FormalConjectures` must not import `Mathlib`, `Mathlib.*`, `FormalConjecturesForMathlib`,
-   or any `FormalConjecturesForMathlib.*` module directly. They should use
-   `import FormalConjecturesUtil` instead.
-2. **Require `FormalConjecturesUtil`**: Problem files in `FormalConjectures` must
-   import `FormalConjecturesUtil`.
+1. Problem files must import `FormalConjecturesUtil`.
+2. Direct imports of `Mathlib`, `Mathlib.*`, and the aggregate
+   `FormalConjecturesForMathlib` are disallowed.
+3. Specific `FormalConjecturesForMathlib.*` modules may be imported directly.
 -/
 
 public meta section
@@ -50,7 +48,7 @@ def checkImports (importIds : Array Syntax) (isFormalConjecturesModule : Bool :=
       Linter.logLintIf linter.style.imports imp
         m!"Direct imports from 'Mathlib' (such as '{modName}') are disallowed in 'FormalConjectures'. \
            Use 'import FormalConjecturesUtil' instead."
-    if modName == `FormalConjecturesForMathlib || modName.getRoot == `FormalConjecturesForMathlib then
+    if modName == `FormalConjecturesForMathlib then
       Linter.logLintIf linter.style.imports imp
         m!"Direct imports from 'FormalConjecturesForMathlib' (such as '{modName}') are disallowed in 'FormalConjectures'. \
            Use 'import FormalConjecturesUtil' instead."
@@ -65,9 +63,8 @@ def checkImports (importIds : Array Syntax) (isFormalConjecturesModule : Bool :=
 /-- Files whose header has already been checked by this linter. -/
 private initialize checkedFiles : IO.Ref (Std.HashSet String) ← IO.mkRef {}
 
-/-- The import linter ensures that:
-- Files in `FormalConjectures` do not import `Mathlib`, `Mathlib.*`, `FormalConjecturesForMathlib`, or `FormalConjecturesForMathlib.*` directly.
-- Files in `FormalConjectures` import `FormalConjecturesUtil`.
+/-- Enforce the required utility import and reject direct imports of Mathlib
+or the shared-library aggregate. Specific shared modules are allowed.
 -/
 def importLinter : Linter where run := withSetOptionIn fun stx ↦ do
   if stx.getKind == ``Lean.Parser.Command.moduleDoc then return

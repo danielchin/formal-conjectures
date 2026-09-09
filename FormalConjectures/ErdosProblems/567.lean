@@ -15,6 +15,7 @@ limitations under the License.
 -/
 
 import FormalConjecturesUtil
+import FormalConjecturesForMathlib.Combinatorics.SimpleGraph.Ramsey
 
 /-!
 # Erdős Problem 567

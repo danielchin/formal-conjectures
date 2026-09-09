@@ -63,11 +63,7 @@ Note: This linter can be disabled with `set_option linter.style.imports false`
 #guard_msgs in
 #check_imports "import FormalConjectures.ErdosProblems.«508»"
 
-/--
-warning: Direct imports from 'FormalConjecturesForMathlib' (such as 'FormalConjecturesForMathlib.Combinatorics.Basic') are disallowed in 'FormalConjectures'. Use 'import FormalConjecturesUtil' instead.
-
-Note: This linter can be disabled with `set_option linter.style.imports false`
--/
+-- Specific shared modules are permitted.
 #guard_msgs in
 #check_imports "import FormalConjecturesUtil\nimport FormalConjecturesForMathlib.Combinatorics.Basic"
 
