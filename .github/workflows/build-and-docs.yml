@@ -15,6 +15,10 @@ on:
         type: boolean
         default: false
         description: Restore the preceding successful cold run's project cache
+      shared_change:
+        type: boolean
+        default: false
+        description: Change a shared module docstring after restoring the base cache
 permissions:
   contents: read
 jobs:
@@ -40,7 +44,20 @@ jobs:
         with:
           path: .lake/build
           key: lean-shards-bench-20260909-${{ inputs.shards }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'lakefile.toml') }}-${{ github.sha }}
+          restore-keys: |
+            lean-shards-bench-20260909-${{ inputs.shards }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'lakefile.toml') }}-
           fail-on-cache-miss: true
+      - name: Apply shared-module benchmark edit
+        if: inputs.shared_change
+        run: |
+          python3 - <<'PYCODE'
+          from pathlib import Path
+          p = Path('FormalConjecturesForMathlib/Combinatorics/SimpleGraph/Ramsey.lean')
+          s = p.read_text()
+          old = '# Ramsey-type properties of graph pairs'
+          assert old in s
+          p.write_text(s.replace(old, old + ' (CI benchmark)', 1))
+          PYCODE
       - name: Generate import aggregates
         run: |
           ./scripts/mk_all_formathlib.sh
@@ -61,7 +78,7 @@ jobs:
           lake exe extract_names --exclude=statement,docstring,moduleDocstrings,fileFirstAdded,fileLastModified > site/data/conjectures.json
           python3 scripts/check_category_warnings.py site/data/conjectures.json
       - name: Save validated project cache
-        if: '!inputs.use_cache'
+        if: '!inputs.use_cache && !inputs.shared_change'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .lake/build
@@ -88,7 +105,20 @@ jobs:
         with:
           path: .lake/build
           key: lean-shards-bench-20260909-${{ inputs.shards }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'lakefile.toml') }}-${{ github.sha }}
+          restore-keys: |
+            lean-shards-bench-20260909-${{ inputs.shards }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'lakefile.toml') }}-
           fail-on-cache-miss: true
+      - name: Apply shared-module benchmark edit
+        if: inputs.shared_change
+        run: |
+          python3 - <<'PYCODE'
+          from pathlib import Path
+          p = Path('FormalConjecturesForMathlib/Combinatorics/SimpleGraph/Ramsey.lean')
+          s = p.read_text()
+          old = '# Ramsey-type properties of graph pairs'
+          assert old in s
+          p.write_text(s.replace(old, old + ' (CI benchmark)', 1))
+          PYCODE
       - name: Generate import aggregates
         run: |
           ./scripts/mk_all_formathlib.sh
@@ -200,7 +230,7 @@ jobs:
           lake exe extract_names --exclude=statement,docstring,moduleDocstrings,fileFirstAdded,fileLastModified > site/data/conjectures.json
           python3 scripts/check_category_warnings.py site/data/conjectures.json
       - name: Save validated project cache
-        if: '!inputs.use_cache'
+        if: '!inputs.use_cache && !inputs.shared_change'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .lake/build
