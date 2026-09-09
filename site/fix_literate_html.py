@@ -8,6 +8,7 @@ Fixes:
 3. Fixes domain-mappers.js module syntax
 4. Installs the shared Verso syntax theme
 5. Adds a root index page that redirects to the website's module index
+6. Links parent breadcrumbs to the filtered module index
 
 Usage: python3 fix_literate_html.py <literate-html-dir>
 """
@@ -16,12 +17,12 @@ import os
 import re
 import shutil
 import sys
+from html import escape, unescape
+from urllib.parse import quote, unquote
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 HIGHLIGHT_STYLESHEET = 'lean-syntax.css'
 HIGHLIGHT_STYLESHEET_SOURCE = os.path.join(SCRIPT_DIR, 'src', 'css', HIGHLIGHT_STYLESHEET)
-NOTES_SCRIPT = 'lean-notes.js'
-NOTES_SCRIPT_SOURCE = os.path.join(SCRIPT_DIR, 'src', 'js', NOTES_SCRIPT)
 HIGHLIGHT_HEAD = f'<link rel="stylesheet" href="{HIGHLIGHT_STYLESHEET}">\n'
 
 KATEX_HEAD = '''
@@ -48,35 +49,33 @@ document.addEventListener("DOMContentLoaded", function() {
 '''
 
 
+def fix_breadcrumbs(html):
+    """Point Verso's parent-folder links to the website's module index."""
+    def fix_list(match):
+        def fix_link(link):
+            href = unescape(link.group(1))
+            if not href.endswith('/') or href.startswith(('../', '/', '#')) or ':' in href:
+                return link.group(0)
+            # The trailing dot keeps similarly named libraries out of the results.
+            prefix = unquote(href).replace('/', '.')
+            target = '../modules/?q=' + quote(prefix, safe='')
+            return f'href="{escape(target, quote=True)}"'
+
+        return re.sub(r'href="([^"]*)"', fix_link, match.group(0))
+
+    # Limit rewriting to navigation; source-code and sidebar links stay intact.
+    return re.sub(r'<ol\b[^>]*class="breadcrumbs"[^>]*>.*?</ol>',
+                  fix_list, html, flags=re.DOTALL)
+
+
 def fix_html_file(path):
     """Install the syntax theme and KaTeX in a Verso HTML file."""
     with open(path, 'r', encoding='utf-8') as f:
         html = f.read()
 
-    modified = False
-
-    # Cached previews may include a query string. Normalize those references
-    # and remove duplicates before deciding whether to install the script.
-    notes_tag = f'<script defer src="{NOTES_SCRIPT}"></script>'
-    seen_notes = False
-
-    def normalize_notes(match):
-        nonlocal seen_notes
-        if seen_notes:
-            return ''
-        seen_notes = True
-        return notes_tag
-
-    normalized = re.sub(
-        r'<script\b[^>]*\bsrc=["\']lean-notes\.js(?:\?[^"\']*)?["\'][^>]*>\s*</script>',
-        normalize_notes, html)
-    if normalized != html:
-        html = normalized
-        modified = True
-
-    if f'src="{NOTES_SCRIPT}"' not in html and '</head>' in html:
-        html = html.replace('</head>', f'<script defer src="{NOTES_SCRIPT}"></script>\n</head>')
-        modified = True
+    fixed_html = fix_breadcrumbs(html)
+    modified = fixed_html != html
+    html = fixed_html
 
     # Add these independently: cached pages may already contain KaTeX.
     if f'href="{HIGHLIGHT_STYLESHEET}"' not in html and '</head>' in html:
@@ -215,8 +214,6 @@ def main():
 
     # Fix code.css layout rules
     fix_code_css(literate_dir)
-
-    shutil.copyfile(NOTES_SCRIPT_SOURCE, os.path.join(literate_dir, NOTES_SCRIPT))
 
     # Verso's <base> points to this root even on deeply nested source pages.
     install_highlight_stylesheet(literate_dir)
