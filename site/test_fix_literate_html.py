@@ -22,6 +22,7 @@ class FixHtmlFileTest(unittest.TestCase):
             with open(page, encoding='utf-8') as f:
                 html = f.read()
             self.assertEqual(html.count('href="lean-syntax.css"'), 1)
+            self.assertEqual(html.count('src="lean-notes.js"'), 1)
             self.assertEqual(html.count('katex.min.css'), 1)
             self.assertEqual(html.count('renderMathInElement(document.body'), 1)
 
@@ -40,6 +41,7 @@ class FixHtmlFileTest(unittest.TestCase):
                 html = f.read()
             self.assertIn(body, html)
             self.assertEqual(html.count('href="lean-syntax.css"'), 1)
+            self.assertEqual(html.count('src="lean-notes.js"'), 1)
 
     def test_existing_katex_does_not_prevent_theme_injection(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -55,6 +57,7 @@ class FixHtmlFileTest(unittest.TestCase):
             with open(page, encoding='utf-8') as f:
                 html = f.read()
             self.assertEqual(html.count('href="lean-syntax.css"'), 1)
+            self.assertEqual(html.count('src="lean-notes.js"'), 1)
             self.assertEqual(html.count('katex.min.css'), 1)
             self.assertEqual(html.count('renderMathInElement(document.body'), 1)
 

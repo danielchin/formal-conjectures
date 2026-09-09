@@ -99,6 +99,30 @@
   width: 0;
   height: 0;
 }
+
+/* Source-line rows avoid indentation inherited from nested tactic wrappers. */
+.code-content .lean-notes-by-line .tactic {
+  display: inline !important;
+  vertical-align: baseline;
+}
+.code-content .lean-notes-by-line .tactic > .tactic-state {
+  display: none !important;
+}
+.code-content .lean-note-row:not([hidden]) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0.25rem 0;
+  white-space: normal;
+}
+.code-content .lean-note-row > .tactic-state {
+  display: block;
+  margin: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: pre;
+}
 .code-content :is(.md-text, .verso-text) {
   font-family: system-ui, sans-serif;
   font-size: 1rem;

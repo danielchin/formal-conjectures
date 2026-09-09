@@ -18,6 +18,8 @@ import sys
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 HIGHLIGHT_STYLESHEET = 'lean-syntax.css'
 HIGHLIGHT_STYLESHEET_SOURCE = os.path.join(SCRIPT_DIR, 'src', 'css', HIGHLIGHT_STYLESHEET)
+NOTES_SCRIPT = 'lean-notes.js'
+NOTES_SCRIPT_SOURCE = os.path.join(SCRIPT_DIR, 'src', 'js', NOTES_SCRIPT)
 HIGHLIGHT_HEAD = f'<link rel="stylesheet" href="{HIGHLIGHT_STYLESHEET}">\n'
 
 KATEX_HEAD = '''
@@ -50,6 +52,10 @@ def fix_html_file(path):
         html = f.read()
 
     modified = False
+
+    if f'src="{NOTES_SCRIPT}"' not in html and '</head>' in html:
+        html = html.replace('</head>', f'<script defer src="{NOTES_SCRIPT}"></script>\n</head>')
+        modified = True
 
     # Add these independently: cached pages may already contain KaTeX.
     if f'href="{HIGHLIGHT_STYLESHEET}"' not in html and '</head>' in html:
@@ -158,6 +164,8 @@ def main():
 
     # Fix code.css layout rules
     fix_code_css(literate_dir)
+
+    shutil.copyfile(NOTES_SCRIPT_SOURCE, os.path.join(literate_dir, NOTES_SCRIPT))
 
     # Verso's <base> points to this root even on deeply nested source pages.
     install_highlight_stylesheet(literate_dir)
