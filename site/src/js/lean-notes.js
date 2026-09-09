@@ -1,6 +1,8 @@
 /* Keep expanded tactic states together beneath their source line. */
 document.addEventListener('DOMContentLoaded', () => {
   for (const code of document.querySelectorAll('.code-content code.hl.lean.block')) {
+    if (code.classList.contains('lean-notes-by-line')) continue;
+    code.classList.add('lean-notes-by-line');
     const lines = [{ toggles: [], anchor: null }];
     let line = lines[0];
 
@@ -36,7 +38,6 @@ document.addEventListener('DOMContentLoaded', () => {
     end.className = 'lean-note-anchor';
     code.appendChild(end);
     line.anchor = end;
-    code.classList.add('lean-notes-by-line');
 
     for (const sourceLine of lines) {
       if (!sourceLine.toggles.length) continue;

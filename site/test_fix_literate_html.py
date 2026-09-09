@@ -10,6 +10,21 @@ import fix_literate_html as fix
 
 class FixHtmlFileTest(unittest.TestCase):
 
+    def test_removes_duplicate_notes_scripts_from_cached_preview(self):
+        with tempfile.TemporaryDirectory() as directory:
+            page = os.path.join(directory, 'index.html')
+            with open(page, 'w', encoding='utf-8') as f:
+                f.write('<html><head>'
+                        '<script defer src="lean-notes.js?preview=old"></script>'
+                        '<script defer src="lean-notes.js"></script>'
+                        '</head><body>Lean</body></html>')
+            self.assertTrue(fix.fix_html_file(page))
+            self.assertFalse(fix.fix_html_file(page))
+            with open(page, encoding='utf-8') as f:
+                html = f.read()
+            self.assertEqual(html.count('lean-notes.js'), 1)
+            self.assertNotIn('preview=old', html)
+
     def test_injects_theme_and_katex_once(self):
         with tempfile.TemporaryDirectory() as directory:
             page = os.path.join(directory, 'index.html')

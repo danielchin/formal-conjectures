@@ -13,6 +13,7 @@ Usage: python3 fix_literate_html.py <literate-html-dir>
 """
 
 import os
+import re
 import shutil
 import sys
 
@@ -53,6 +54,25 @@ def fix_html_file(path):
         html = f.read()
 
     modified = False
+
+    # Cached previews may include a query string. Normalize those references
+    # and remove duplicates before deciding whether to install the script.
+    notes_tag = f'<script defer src="{NOTES_SCRIPT}"></script>'
+    seen_notes = False
+
+    def normalize_notes(match):
+        nonlocal seen_notes
+        if seen_notes:
+            return ''
+        seen_notes = True
+        return notes_tag
+
+    normalized = re.sub(
+        r'<script\b[^>]*\bsrc=["\']lean-notes\.js(?:\?[^"\']*)?["\'][^>]*>\s*</script>',
+        normalize_notes, html)
+    if normalized != html:
+        html = normalized
+        modified = True
 
     if f'src="{NOTES_SCRIPT}"' not in html and '</head>' in html:
         html = html.replace('</head>', f'<script defer src="{NOTES_SCRIPT}"></script>\n</head>')
