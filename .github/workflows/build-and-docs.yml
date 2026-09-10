@@ -13,33 +13,30 @@
 # limitations under the License.
 
 name: Build Lean project and deploy docs
-
-on:
+'on':
   push:
     branches:
       - main
       - '*-webtest'
-  pull_request:
-  # The merge queue builds the branch as it will land, so the checks below have
-  # to report on it or the queue never dequeues anything.
-  merge_group:
+  pull_request: null
+  merge_group: null
   workflow_dispatch:
     inputs:
       website_only:
-        description: 'Skip Lean build and use live site data (for website development)'
+        description: Skip Lean build and use live site data (for website development)
         type: boolean
         default: false
-
 permissions:
   contents: read
-
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
-  # The category check is a policy gate, so it has tests of its own. They need
-  # no Lean build, so they run alongside it rather than after it.
   scripts:
     runs-on: ubuntu-latest
     name: Test scripts
     steps:
+
       - name: Checkout project
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -48,17 +45,20 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
-          python-version: '3.12.9'
+          python-version: 3.12.9
 
       - name: Run script tests
         run: python3 -m unittest discover -s scripts -p 'test_*.py' -v
 
       - name: Run website post-processing tests
         run: python3 -m unittest discover -s site -p 'test_*.py' -v
-
+  # Keep this check name for existing branch protection. It validates Lean only.
   build:
     runs-on: ubuntu-latest
     name: Build project
+    outputs:
+      site: ${{ steps.mode.outputs.site }}
+      website_only: ${{ steps.mode.outputs.website_only }}
     steps:
 
       - name: Checkout project
@@ -67,20 +67,6 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      # Two independent halves of this job, each with its own switch.
-      #
-      # `website_only` skips the slow Lean compilation and takes the data from
-      # the live site instead. Triggers:
-      #   - Branches ending in -webtest
-      #   - Manual workflow_dispatch with website_only=true
-      #
-      # `site` builds the website and the literate source pages. Rendering the
-      # literate pages alone takes longer than the Lean build, and a pull
-      # request cannot deploy the result: the `deploy` job below is restricted
-      # to `main` and `-webtest` branches. So a pull request skips it, and it
-      # runs in the merge queue and on `main`, which is where breaking it
-      # would matter. A pull request that changes the site itself still builds
-      # it, so the author sees the failure before the queue does.
       - name: Detect build mode
         id: mode
         env:
@@ -120,8 +106,19 @@ jobs:
           ./elan-init -y --default-toolchain none
           echo "$HOME/.elan/bin" >> $GITHUB_PATH
 
-      - name: Restore ~/.cache/mathlib
+      # An exact hit includes the compiler, dependency sources and build outputs.
+      - name: Restore prepared Lean environment
+        id: lean-env
         if: steps.mode.outputs.website_only != 'true'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.elan/toolchains
+            .lake/packages
+          key: lean-env-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'lakefile.toml') }}
+
+      - name: Restore ~/.cache/mathlib
+        if: steps.mode.outputs.website_only != 'true' && steps.lean-env.outputs.cache-hit != 'true'
         uses: actions/cache/restore@6f8efc29b200d32929f49075959781ed54ec270c # v3
         with:
           path: ~/.cache/mathlib
@@ -130,30 +127,26 @@ jobs:
             oleans-${{ hashFiles('lean-toolchain') }}-
 
       - name: Get olean cache
-        if: steps.mode.outputs.website_only != 'true'
+        if: steps.mode.outputs.website_only != 'true' && steps.lean-env.outputs.cache-hit != 'true'
         run: |
           lake exe cache unpack
           lake exe cache get
 
-      - name: Restore local lake build
+      - name: Restore Lean build
         if: steps.mode.outputs.website_only != 'true'
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             .lake/build
-            docbuild/.lake/build
-            _literate_html
-          key: lake-build-${{ runner.os }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'docbuild/lake-manifest.json', 'docbuild/lakefile.toml') }}-${{ github.sha }}
+          key: lean-build-v3-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'lakefile.toml') }}-${{ github.sha }}
           restore-keys: |
-            lake-build-${{ runner.os }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'docbuild/lake-manifest.json', 'docbuild/lakefile.toml') }}-
+            lean-build-v3-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'lakefile.toml') }}-
 
       - name: Generate FormalConjecturesForMathlib.lean
         if: steps.mode.outputs.website_only != 'true'
         run: |
           ./scripts/mk_all_formathlib.sh
 
-      # Generating All.lean aggregates all problem files into a single module to detect
-      # clashing declaration names across problem modules during compilation.
       - name: Generate All.lean
         if: steps.mode.outputs.website_only != 'true'
         run: |
@@ -188,12 +181,134 @@ jobs:
           action: remove
           linters: lean
 
-      # Every library that the problem files build on gets a literate page, so
-      # that hovers and constant links from a problem resolve to the definition
-      # in `FormalConjecturesForMathlib` or `FormalConjecturesUtil` instead of
-      # dead-ending. The test library is left out: it documents nothing.
+      - name: Set up Python
+        if: steps.mode.outputs.website_only != 'true'
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: 3.12.9
+
+      - name: Extract conjecture metadata
+        if: steps.mode.outputs.website_only != 'true'
+        run: |
+          mkdir -p site/data
+          lake exe extract_names --exclude=statement,docstring,moduleDocstrings,fileFirstAdded,fileLastModified \
+            > site/data/conjectures.json
+
+      - name: Check category warnings
+        if: steps.mode.outputs.website_only != 'true'
+        run: python3 scripts/check_category_warnings.py site/data/conjectures.json
+
+      # Save after metadata extraction so its executable is reusable too.
+      # Documentation runs on a separate runner and cannot modify this cache.
+      - name: Save Lean build
+        if: steps.mode.outputs.website_only != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            .lake/build
+          key: lean-build-v3-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'lakefile.toml') }}-${{ github.sha }}
+
+      - name: Save prepared Lean environment
+        if: steps.mode.outputs.website_only != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.lean-env.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.elan/toolchains
+            .lake/packages
+          key: lean-env-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'lakefile.toml') }}
+
+  # Documentation failure has its own status and does not delay the Lean result.
+  docs:
+    runs-on: ubuntu-latest
+    name: Build documentation
+    needs: build
+    if: needs.build.outputs.site == 'true'
+    steps:
+
+      - name: Checkout project
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install elan
+        if: needs.build.outputs.website_only != 'true'
+        run: |
+          set -o pipefail
+          curl -sSfL https://github.com/leanprover/elan/releases/download/v1.4.2/elan-x86_64-unknown-linux-gnu.tar.gz | tar xz
+          ./elan-init -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> $GITHUB_PATH
+
+      # An exact hit includes the compiler, dependency sources and build outputs.
+      - name: Restore prepared Lean environment
+        id: lean-env
+        if: needs.build.outputs.website_only != 'true'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.elan/toolchains
+            .lake/packages
+          key: lean-env-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'lakefile.toml') }}
+
+      - name: Restore ~/.cache/mathlib
+        if: needs.build.outputs.website_only != 'true' && steps.lean-env.outputs.cache-hit != 'true'
+        uses: actions/cache/restore@6f8efc29b200d32929f49075959781ed54ec270c # v3
+        with:
+          path: ~/.cache/mathlib
+          key: oleans-${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}
+          restore-keys: |
+            oleans-${{ hashFiles('lean-toolchain') }}-
+
+      - name: Get olean cache
+        if: needs.build.outputs.website_only != 'true' && steps.lean-env.outputs.cache-hit != 'true'
+        run: |
+          lake exe cache unpack
+          lake exe cache get
+
+      - name: Restore Lean build
+        if: needs.build.outputs.website_only != 'true'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            .lake/build
+          key: lean-build-v3-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'lakefile.toml') }}-${{ github.sha }}
+          restore-keys: |
+            lean-build-v3-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'lakefile.toml') }}-
+
+      - name: Generate FormalConjecturesForMathlib.lean
+        if: needs.build.outputs.website_only != 'true'
+        run: |
+          ./scripts/mk_all_formathlib.sh
+
+      - name: Initialize documentation workspace
+        if: needs.build.outputs.website_only != 'true' && needs.build.outputs.site == 'true'
+        working-directory: docbuild
+        run: lake env lean --version
+
+      - name: Restore documentation tools
+        if: needs.build.outputs.website_only != 'true' && needs.build.outputs.site == 'true'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            .lake/packages/verso/.lake/build
+            .lake/packages/subverso/.lake/build
+            .lake/packages/MD4Lean/.lake/build
+            .lake/packages/illuminate/.lake/build
+            .lake/packages/plausible/.lake/build
+          key: doc-tools-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'docbuild/lake-manifest.json', 'docbuild/lakefile.toml') }}
+
+      - name: Restore literate data
+        if: needs.build.outputs.website_only != 'true' && needs.build.outputs.site == 'true'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            docbuild/.lake/build
+          key: literate-build-v3-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'lakefile.toml', 'docbuild/lake-manifest.json', 'docbuild/lakefile.toml') }}-${{ github.sha }}
+          restore-keys: |
+            literate-build-v3-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'lakefile.toml', 'docbuild/lake-manifest.json', 'docbuild/lakefile.toml') }}-
+
       - name: Build literate source pages
-        if: steps.mode.outputs.website_only != 'true' && steps.mode.outputs.site == 'true'
+        if: needs.build.outputs.website_only != 'true' && needs.build.outputs.site == 'true'
         run: |
           cd docbuild
           lake build FormalConjectures:literate \
@@ -202,93 +317,68 @@ jobs:
           lake exe verso-html .lake/build/literate ../_literate_html
 
       - name: Post-process literate HTML
-        if: steps.mode.outputs.website_only != 'true' && steps.mode.outputs.site == 'true'
+        if: needs.build.outputs.website_only != 'true' && needs.build.outputs.site == 'true'
         run: |
           python3 site/fix_literate_html.py _literate_html
 
-      - name: Save local lake build
-        if: steps.mode.outputs.website_only != 'true' && github.event_name == 'push'
+      - name: Save documentation tools
+        if: needs.build.outputs.website_only != 'true' && needs.build.outputs.site == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
-            .lake/build
-            docbuild/.lake/build
-            _literate_html
-          key: lake-build-${{ runner.os }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'docbuild/lake-manifest.json', 'docbuild/lakefile.toml') }}-${{ github.sha }}
+            .lake/packages/verso/.lake/build
+            .lake/packages/subverso/.lake/build
+            .lake/packages/MD4Lean/.lake/build
+            .lake/packages/illuminate/.lake/build
+            .lake/packages/plausible/.lake/build
+          key: doc-tools-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'docbuild/lake-manifest.json', 'docbuild/lakefile.toml') }}
 
-      # Only a push writes to the shared cache. An entry saved from anywhere
-      # else is scoped to a ref nothing later restores from, while it takes
-      # 0.37 GB of a 10 GB repository budget that is currently full, evicting
-      # the `main` entries every build falls back to through `restore-keys`.
-      # A pull request entry is visible only to that pull request's own later
-      # runs. A merge queue entry is worse: `gh-readonly-queue/...` is deleted
-      # as soon as the batch merges, so the entry is unreachable the moment it
-      # is written.
-      - name: Pack olean cache
-        if: steps.mode.outputs.website_only != 'true' && github.event_name == 'push'
-        run: |
-          lake exe cache pack
-          ls ~/.cache/mathlib
-
-      - name: Save ~/.cache/mathlib
-        if: steps.mode.outputs.website_only != 'true' && github.event_name == 'push'
-        uses: actions/cache/save@6f8efc29b200d32929f49075959781ed54ec270c # v3
+      - name: Save literate data
+        if: needs.build.outputs.website_only != 'true' && needs.build.outputs.site == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: ~/.cache/mathlib
-          key: oleans-${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}
+          path: |
+            docbuild/.lake/build
+          key: literate-build-v3-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'lakefile.toml', 'docbuild/lake-manifest.json', 'docbuild/lakefile.toml') }}-${{ github.sha }}
 
       - name: Set up Python
-        if: steps.mode.outputs.website_only != 'true'
+        if: needs.build.outputs.website_only != 'true'
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
-          python-version: '3.12.9'
+          python-version: 3.12.9
 
-      # Only the plotting and Verso-fragment scripts need these; the category
-      # check below is standard library only.
       - name: Install Python dependencies
-        if: steps.mode.outputs.website_only != 'true' && steps.mode.outputs.site == 'true'
+        if: needs.build.outputs.website_only != 'true' && needs.build.outputs.site == 'true'
         run: |
           python -m pip install --upgrade pip
           pip install pandas==2.2.3 numpy==2.2.3 plotly==5.20.0 beautifulsoup4 lxml
 
       - name: Run plotting script
-        if: steps.mode.outputs.website_only != 'true' && steps.mode.outputs.site == 'true'
+        if: needs.build.outputs.website_only != 'true' && needs.build.outputs.site == 'true'
         run: |
           mkdir -p site/data
           python site/plot_growth.py
 
       - name: Set up Node.js
-        if: steps.mode.outputs.site == 'true'
+        if: needs.build.outputs.site == 'true'
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '18'
 
       - name: Generate conjectures data for website
-        if: steps.mode.outputs.website_only != 'true'
+        if: needs.build.outputs.website_only != 'true'
         run: |
           mkdir -p site/data
           lake exe extract_names --exclude=statement,docstring,moduleDocstrings,fileFirstAdded,fileLastModified \
             > site/data/conjectures.json
 
-      # `extract_names` notices `research open` problems with a sorry-free proof,
-      # and `test`/`API` statements without one, all decidable from the JSON just
-      # written. The first is a contradiction and fails; the other two are counted
-      # in the run summary without blocking.
-      - name: Check category warnings
-        if: steps.mode.outputs.website_only != 'true'
-        run: python3 scripts/check_category_warnings.py site/data/conjectures.json
-
       - name: Extract Verso fragments for website
-        if: steps.mode.outputs.website_only != 'true' && steps.mode.outputs.site == 'true'
+        if: needs.build.outputs.website_only != 'true' && needs.build.outputs.site == 'true'
         run: |
           python3 site/extract_verso_fragments.py _literate_html site/data/verso-fragments.json
 
-      # In website-only mode, download data from the live production site
-      # instead of building it from scratch. The live site serves the processed
-      # format ({ conjectures, versoFragments, ... }), so we convert it back to
-      # the raw extract_names format ({ problems }) that build.js expects.
       - name: Download live site data
-        if: steps.mode.outputs.website_only == 'true'
+        if: needs.build.outputs.website_only == 'true'
         run: |
           LIVE_URL="https://google-deepmind.github.io/formal-conjectures"
           mkdir -p site/data _literate_html
@@ -328,7 +418,7 @@ jobs:
           "
 
       - name: Build website
-        if: steps.mode.outputs.site == 'true'
+        if: needs.build.outputs.site == 'true'
         run: |
           cd site
           node build.js
@@ -337,7 +427,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
 
       - name: Assemble deploy artifact
-        if: steps.mode.outputs.site == 'true'
+        if: needs.build.outputs.site == 'true'
         run: |
           mkdir -p _deploy
           # Website goes at root
@@ -349,28 +439,28 @@ jobs:
 
       - name: Upload deploy artifact
         id: deployment
-        if: steps.mode.outputs.site == 'true'
+        if: needs.build.outputs.site == 'true'
         uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
         with:
           path: _deploy
-
-  # Deployment job
   deploy:
-    if: >-
-      github.ref == 'refs/heads/main' ||
-      (github.repository != 'google-deepmind/formal-conjectures' &&
+    if: |-
+      github.ref == 'refs/heads/main' || (github.repository != 'google-deepmind/formal-conjectures' &&
        endsWith(github.ref_name, '-webtest'))
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    needs: build
-    # Only the deployment job needs write access to Pages and the OIDC token.
+    needs:
+      - build
+      - docs
+      - scripts
     permissions:
       contents: read
       pages: write
       id-token: write
     steps:
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
